@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trade Risk Calculator</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f3f3;color:#292929;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:700px;margin:12px auto;padding:12px}h1{text-align:center;font-size:23px;font-weight:600;margin:5px 0 12px}h2{font-size:14px;font-weight:600;letter-spacing:.4px;color:#626262;margin:0 0 8px}section{padding:12px;background:#fff;border-radius:4px;margin:10px 0}.row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:24px;margin:5px 0}.row label{flex:1}input{width:112px;min-height:36px;padding:6px 9px;background:#fff;border:1px solid #ddd;border-radius:4px;color:#292929;font:inherit;font-size:16px}input:focus{outline:2px solid #37474f;outline-offset:1px}input:disabled{background:#eee;color:#777}output{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:500}#shares,#investment,#loss,#price{font-weight:700}button{background:#37474f;border:0;border-radius:4px;min-height:42px;padding:9px 14px;color:white;font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.secondary{background:white;color:#37474f;border:1px solid #d2d6d8}.buttons{display:flex;gap:8px;flex-wrap:wrap}.status{font-size:12px;color:#626262;line-height:16px;margin:4px 0 6px;min-height:16px}.error{color:#a62d31!important}.muted{color:#626262;font-size:13px}.trade{background:transparent;margin:0;padding:6px 12px 10px}.trade input{border-color:transparent}.results{margin:0 0 8px;padding:10px 12px}.results .row{margin:0;padding:3px 0;min-height:26px;border-bottom:1px solid #e6e6e6}.results .row:last-child{border:0}details{background:white;border:1px solid #e6e6e6;border-radius:4px;margin:8px 0}summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:12px;cursor:pointer;font-size:14px;font-weight:600;list-style:none}summary::-webkit-details-marker{display:none}summary::after{content:'+';font-size:20px;font-weight:400}details[open]>summary::after{content:'−'}summary:focus-visible{outline:2px solid #37474f;outline-offset:-2px}details section{margin:0;padding:0 12px 12px}footer{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #ddd;margin:18px 0 8px;padding:12px 4px 4px}#account{font-size:13px;color:#626262;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100% - 100px)}footer button{font-size:14px;padding:8px 12px}#auth input,#recovery input{width:100%;min-height:44px;margin:8px 0 16px}#auth{margin-top:18px;padding:18px}#validation:empty{display:none}[hidden]{display:none!important}@media(max-width:480px){main{padding:8px;margin:0 auto}h1{margin:5px 0 8px}.row{gap:8px}}
+</style>
+</head>
+<body><main>
+<h1>Trade Risk Calculator</h1>
+<section id="auth"><h2>SIGN IN OR CREATE AN ACCOUNT</h2>
+<form id="loginForm"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" minlength="8" required><div class="buttons"><button type="submit">Sign in</button><button type="button" class="secondary" id="signup">Create account</button><button type="button" class="secondary" id="forgot">Reset password</button></div></form><p id="authMsg" class="status" role="status"></p></section>
+<section id="recovery" hidden><h2>SET A NEW PASSWORD</h2><form id="resetForm"><label for="newPassword">New password</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8" required><button id="resetButton">Update password</button></form><p id="resetMsg" class="status" role="status"></p></section>
+<div id="app" hidden><p id="saveMsg" class="status" role="status"></p><button id="retry" class="secondary" hidden>Retry</button>
+<section class="trade"><h2>TRADE INPUTS</h2>
+<div class="row"><label for="risk">Risk per trade (%)</label><input id="risk" type="number" min="0" max="100" step="any" inputmode="decimal"></div>
+<div class="row"><span>Risk budget / 1R</span><output id="budget">—</output></div>
+<div class="row"><label for="buy">Buy point, USD</label><input id="buy" type="number" min="0" step="any" inputmode="decimal"></div>
+<div class="row"><label for="stop">Stop loss, USD</label><input id="stop" type="number" min="0" step="any" inputmode="decimal"></div>
+<div class="row"><label for="target">Target R-multiple</label><input id="target" type="number" min="0" step="any" inputmode="decimal"></div>
+</section>
+<section class="results"><h2>RESULTS</h2>
+<div class="row"><span>Stop distance</span><output id="distance">—</output></div>
+<div class="row"><span>Risk per share</span><output id="rps">—</output></div>
+<div class="row"><span>Shares to buy</span><output id="shares">—</output></div>
+<div class="row"><span>Investment amount</span><output id="investment">—</output></div>
+<div class="row"><span>Portfolio allocation</span><output id="allocation">—</output></div>
+<div class="row"><span>Planned stop loss</span><output id="loss">—</output></div>
+<div class="row"><span>Target price</span><output id="price">—</output></div>
+<div class="row"><span>Potential profit</span><output id="profit">—</output></div>
+<div class="row"><span>Reward-to-risk</span><output id="rr">—</output></div>
+</section>
+<p id="validation" class="status error" role="status"></p>
+<details><summary>Target comparison</summary><section><div class="row"><span>1.5R target</span><output id="t15">—</output></div><div class="row"><span>2R target</span><output id="t2">—</output></div></section></details>
+<details><summary>Optional trade result</summary><section><div class="row"><label for="exit">Exit price, USD</label><input id="exit" type="number" min="0" step="any" inputmode="decimal"></div><div class="row"><span>Profit / loss</span><output id="pnl">—</output></div><div class="row"><span>Achieved R</span><output id="achieved">—</output></div></section></details>
+<details id="portfolioDetails"><summary>Portfolio settings</summary><section><div class="row"><label for="principal">Principal in HKD</label><input id="principal" type="number" min="0" step="any" inputmode="decimal"></div><div class="row"><label for="fx">HKD per USD</label><input id="fx" type="number" min="0" step="any" inputmode="decimal"></div><div class="row"><span>USD principal</span><output id="usd">—</output></div></section></details>
+<p class="muted">Long trades, whole shares, no leverage. Fees, slippage and taxes excluded. A stop does not guarantee the planned loss.</p>
+<footer><span id="account"></span><button id="logout" class="secondary">Sign out</button></footer>
+</div></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const defaults={risk:'1',buy:'100',stop:'95',target:'1.5',exit:'',principal:'',fx:'7.8'};
+const keys=Object.keys(defaults),outputs=['budget','distance','rps','shares','investment','allocation','loss','price','profit','rr','t15','t2','pnl','achieved','usd'];
+let client=null,user=null,loaded=false,dirty=false,revision=0,epoch=0,timer=null,inFlight=null,recovering=false;
+const money=n=>'US$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct=n=>n.toFixed(2)+'%';
+function values(){return Object.fromEntries(keys.map(k=>[k,$(k).value]));}
+function fill(v){keys.forEach(k=>$(k).value=typeof v[k]==='string'||typeof v[k]==='number'?v[k]:defaults[k]);calculate();}
+function lock(v){keys.forEach(k=>$(k).disabled=v);}
+function status(text,bad=false){$('saveMsg').textContent=text;$('saveMsg').classList.toggle('error',bad);}
+function calculate(){
+ outputs.forEach(k=>$(k).textContent='—');$('validation').textContent='';
+ const raw=values(),n=Object.fromEntries(keys.map(k=>[k,raw[k]===''?NaN:Number(raw[k])])),{principal,fx,risk,buy,stop,target}=n;
+ const validPortfolio=Number.isFinite(principal)&&Number.isFinite(fx)&&principal>0&&fx>0;
+ if(validPortfolio)$('usd').textContent=money(principal/fx);
+ if(validPortfolio&&risk>0&&risk<=100)$('budget').textContent=money(principal/fx*risk/100);
+ if(!(Number.isFinite(buy)&&Number.isFinite(stop)&&Number.isFinite(target)&&buy>0&&stop>=0&&stop<buy&&target>0)){$('validation').textContent='For a long trade, buy must be positive, stop must be below buy, and target R must be positive.';return;}
+ const r=buy-stop;$('distance').textContent=pct(r/buy*100);$('rps').textContent=money(r);$('price').textContent=money(buy+target*r);$('t15').textContent=money(buy+1.5*r);$('t2').textContent=money(buy+2*r);$('rr').textContent=target+':1';
+ if(!validPortfolio){$('validation').textContent='Open Portfolio settings to enter your principal and exchange rate.';return;}
+ if(!(risk>0&&risk<=100)){$('validation').textContent='Risk per trade must be greater than 0 and no more than 100%.';return;}
+ const usd=principal/fx,budget=usd*risk/100,qty=Math.min(Math.floor(budget/r),Math.floor(usd/buy)),investment=qty*buy,loss=qty*r;
+ $('shares').textContent=qty.toLocaleString('en-US');$('investment').textContent=money(investment);$('allocation').textContent=pct(investment/usd*100);$('loss').textContent=money(loss);$('profit').textContent=money(loss*target);
+ if(Math.floor(budget/r)>Math.floor(usd/buy))$('validation').textContent='Shares capped at available principal (no leverage).';
+ if(Number.isFinite(n.exit)&&n.exit>=0){$('pnl').textContent=money(qty*(n.exit-buy));$('achieved').textContent=loss>0?((n.exit-buy)/r).toFixed(2)+'R':'—';}
+}
+async function save(){
+ clearTimeout(timer);if(inFlight)return inFlight;if(!user||!loaded||!dirty)return true;
+ const myEpoch=epoch,uid=user.id;
+ inFlight=(async()=>{
+  while(myEpoch===epoch&&dirty){const rev=revision,snapshot=values();status('Saving…');
+   try{const {error}=await client.from('calculator_settings').upsert({user_id:uid,inputs:snapshot},{onConflict:'user_id'});if(error)throw error;
+    if(myEpoch!==epoch)return false;
+    if(rev===revision){dirty=false;status('Saved');$('retry').hidden=true;}
+   }catch(e){if(myEpoch===epoch){status('Not saved: '+e.message+'. Keep this page open and retry.',true);$('retry').hidden=false;}return false;}
+  }return true;
+ })();
+ try{return await inFlight;}finally{inFlight=null;}
+}
+async function load(){
+ if(!user)return;const myEpoch=epoch,uid=user.id;loaded=false;lock(true);$('retry').hidden=true;status('Loading your saved inputs…');
+ try{const {data,error}=await client.from('calculator_settings').select('inputs').eq('user_id',uid).maybeSingle();if(error)throw error;if(myEpoch!==epoch)return;
+ fill({...defaults,...(data?.inputs||{})});loaded=true;lock(false);status(data?'Saved inputs loaded':'Changes save automatically');
+ if(!data||!(Number($('principal').value)>0))$('portfolioDetails').open=true;
+ }catch(e){if(myEpoch===epoch){status('Unable to load inputs: '+e.message,true);$('retry').hidden=false;}}
+}
+function clearScreen(){clearTimeout(timer);epoch++;user=null;loaded=false;dirty=false;lock(true);keys.forEach(k=>$(k).value='');outputs.forEach(k=>$(k).textContent='—');document.querySelectorAll('#app details').forEach(d=>d.open=false);$('account').textContent='';$('app').hidden=true;$('auth').hidden=recovering;status('');$('validation').textContent='';}
+async function sync(session){if(!session){clearScreen();return;}if(user?.id===session.user.id)return;clearScreen();user=session.user;if(recovering)return;$('auth').hidden=true;$('app').hidden=false;$('account').textContent=user.email||'Signed in';await load();}
+keys.forEach(k=>$(k).addEventListener('input',()=>{calculate();if(!loaded)return;dirty=true;revision++;status('Saving soon…');clearTimeout(timer);timer=setTimeout(save,650);}));
+$('retry').onclick=()=>loaded?save():load();
+const redirect=()=>location.origin+location.pathname;
+async function authAction(fn){const buttons=document.querySelectorAll('#auth button');buttons.forEach(b=>b.disabled=true);$('authMsg').textContent='Please wait…';try{await fn();}catch(e){$('authMsg').textContent=e.message;}finally{buttons.forEach(b=>b.disabled=false);}}
+$('loginForm').onsubmit=e=>{e.preventDefault();authAction(async()=>{const {data,error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;$('password').value='';$('authMsg').textContent='';await sync(data.session);});};
+$('signup').onclick=()=>{if(!$('loginForm').reportValidity())return;authAction(async()=>{const {data,error}=await client.auth.signUp({email:$('email').value.trim(),password:$('password').value,options:{emailRedirectTo:redirect()}});if(error)throw error;$('password').value='';$('authMsg').textContent='Check your email to confirm your account, then sign in.';if(data.session)await sync(data.session);});};
+$('forgot').onclick=()=>{if(!$('email').reportValidity())return;authAction(async()=>{const {error}=await client.auth.resetPasswordForEmail($('email').value.trim(),{redirectTo:redirect()});if(error)throw error;$('authMsg').textContent='If the account exists, check your email for a password-reset link.';});};
+$('resetForm').onsubmit=async e=>{e.preventDefault();$('resetButton').disabled=true;try{const {error}=await client.auth.updateUser({password:$('newPassword').value});if(error)throw error;$('newPassword').value='';recovering=false;$('recovery').hidden=true;const result=await client.auth.signOut();if(result.error)throw result.error;$('authMsg').textContent='Password updated. Sign in with your new password.';}catch(e){$('resetMsg').textContent=e.message;}finally{$('resetButton').disabled=false;}};
+$('logout').onclick=async()=>{if(!client)return;$('logout').disabled=true;try{if(loaded)await save();if(dirty){status('Your changes are not saved. Retry before signing out.',true);return;}const {error}=await client.auth.signOut();if(error)throw error;clearScreen();}catch(e){status(e.message,true);}finally{$('logout').disabled=false;}};
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+(async()=>{try{
+ if(!window.supabase)throw new Error('The sign-in library did not load. Check your internet connection and reload.');
+ recovering=new URLSearchParams(location.hash.slice(1)).get('type')==='recovery';
+ client=supabase.createClient('https://fkefwxfuvkogqvgmeqgl.supabase.co','sb_publishable_ff_L2EXjrN0pKc3MGz9-QQ_BgEBLs-X');
+ client.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){recovering=true;clearScreen();$('auth').hidden=true;$('recovery').hidden=false;}setTimeout(()=>sync(session),0);});
+ const {data,error}=await client.auth.getSession();if(error)throw error;if(recovering){$('auth').hidden=true;$('recovery').hidden=false;}await sync(data.session);
+ }catch(e){$('authMsg').textContent='Unable to initialise sign-in: '+e.message;document.querySelectorAll('#auth button').forEach(b=>b.disabled=true);}
+})();
+</script>
+</body></html>
