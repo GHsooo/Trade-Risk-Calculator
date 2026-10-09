@@ -39,4 +39,4 @@ $('logout').onclick=async()=>{if(!loaded){await client.auth.signOut();return;}$(
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
 client.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){recovering=true;clearScreen();$('auth').hidden=true;$('recovery').hidden=false;}setTimeout(()=>sync(session),0);});
 (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;await sync(data.session);}catch(e){$('authMsg').textContent='Unable to initialise sign-in: '+e.message;}})();
-</script></body></html>
+</script><script src="./compact-layout.js"></script></body></html>
